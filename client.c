@@ -16,9 +16,11 @@ int main (int argc, char **argv) {
 	enum {BUF_SIZE = 4096};
 
 	int socket;
+	size_t bytesRead;
 	char buf[BUF_SIZE];
 	struct addrinfo hints;
 	struct addrinfo *result;
+	FILE *psFile;
 
 	memset((void *) &hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -36,7 +38,21 @@ int main (int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 	freeaddrinfo(result);
-
-
-
+	if ((psFile = fopen("filein.txt", "r")) == NULL) {
+		perror("input file");
+		exit(EXIT_FAILURE);
+	}
+	while ((bytesRead = fread((void *) buf, 1, BUF_SIZE, psFile)) == BUF_SIZE)
+		if (send(socket, (void *) buf, bytesRead, NULL) != bytesRead) {
+			perror("send");
+			exit(EXIT_FAILURE);
+		}
+	if (ferror(psFile)) {
+		perror("read");
+		exit(EXIT_FAILURE);
+	}
+	if (send(socket, (void *) buf, bytesRead, NULL) != bytesRead) {
+		perror("send");
+		exit(EXIT_FAILURE);
+	}
 }
